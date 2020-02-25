@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Avatar,
   ListItemAvatar,
@@ -6,34 +7,13 @@ import {
   TableRow,
   Typography,
 } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import FlightLandIcon from '@material-ui/icons/FlightLand';
 import FlightTakeoffIcon from '@material-ui/icons/FlightTakeoff';
-import React from 'react';
 
+import useStyles from './styles'
 interface ITableHeaderProps {
-    
+  render: () => void
 }
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    theading: {
-      display: 'inline-block',
-      verticalAlign: 'text-bottom',
-      fontWeight: 500,
-      color: '#268bdc',
-    },
-    avatar: {
-      display: 'inline-block',
-      minWidth: 40,
-    },
-    avatarSize: {
-      width: 30,
-      height: 30,
-      backgroundColor: '#95caf5',
-    },
-  })
-);
 
 const IconWithTypegraphy = (props: any) => {
   const classes = useStyles();
@@ -51,7 +31,7 @@ const IconWithTypegraphy = (props: any) => {
   );
 };
 
-function TableHeader(props: any) {
+function TableHeader() {
   return (
     <TableHead>
       <TableRow>
