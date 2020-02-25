@@ -14,7 +14,7 @@ import {
   TableContainer,
   TableFooter,
   TablePagination,
-  TableRow,
+  TableRow
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 /**icons */
@@ -28,7 +28,7 @@ import axios from 'axios';
 import API from '../../api/config';
 import FlightList from './../FlightList';
 import Header from './../Header';
-import Loader from './../Loader';
+import Loader from '../Loader/Loader';
 import TableHeader from '../Table/TableHeader';
 import useStyles from './styles';
 
@@ -226,7 +226,7 @@ const Home = (props: ITableProps) => {
       </FormControl>
       {!isLoading ? (
         <TableContainer component={Paper} className={classes.tableContainer}>
-          <Table className={classes.table} aria-label="simple table">
+          <Table className={classes.table}>
             <TableHeader />
             <TableBody>
               {!isLoading &&
@@ -276,7 +276,7 @@ const Home = (props: ITableProps) => {
           </Table>
         </TableContainer>
       ) : (
-        <Loader className={classes.loading} />
+        <Loader />
       )}
     </Container>
   );

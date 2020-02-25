@@ -6,9 +6,6 @@ const useStyles = makeStyles((theme: Theme) =>
       margin: theme.spacing(5, 0, 0, 0),
       color: '#7a71a9',
     },
-    loading: {
-      padding: theme.spacing(10, 50),
-    },
     formControl: {
       margin: theme.spacing(5, 0, 5, 0),
       minWidth: 250,
