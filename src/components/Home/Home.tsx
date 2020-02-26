@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 /** material-ui */
 import {
   Container,
@@ -14,7 +14,7 @@ import {
   TableContainer,
   TableFooter,
   TablePagination,
-  TableRow
+  TableRow,
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 /**icons */
@@ -23,14 +23,17 @@ import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
 import LastPageIcon from '@material-ui/icons/LastPage';
 /** axios */
-import axios from 'axios';
 /** components */
-import API from '../../api/config';
-import FlightList from './../FlightList';
 import Header from './../Header';
 import Loader from '../Loader/Loader';
 import TableHeader from '../Table/TableHeader';
 import useStyles from './styles';
+
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  getCheapFlightsData,
+  getBusinessFlightsData,
+} from '../../redux/actions/index';
 
 export interface ITablePagination {
   count: number;
@@ -114,87 +117,62 @@ function TablePaginationAction(props: ITablePagination) {
   );
 }
 
-export interface ITableProps {
-  data: any;
-}
-
-const Home = (props: ITableProps) => {
-  const [isLoading, setIsLoading] = useState(false);
+const Home: React.FC = () => {
   const [cabinType, setCabinType] = useState('all');
-  const [cheapFlights, setCheapFlights] = useState([]);
-  const [bizFlights, setBizFlights] = useState([]);
 
+  const cheapFlight = useSelector(
+    (state: any) => state.cheapFlightsInfo.cheapFlights
+  );
+  const businessFlight = useSelector(
+    (state: any) => state.businessFlightsInfo.businessFlights
+  );
+
+  const isCheapflightsLoading = useSelector(
+    (state: any) => state.cheapFlightsInfo.loading
+  );
+  const isBusinessflightsLoading = useSelector(
+    (state: any) => state.cheapFlightsInfo.loading
+  );
+
+  const dispatch = useDispatch();
   const _isMounted = useRef(true);
-
-  /* const news = useSelector(state => state);
-    const dispatch = useDispatch() */
 
   const classes = useStyles();
 
   const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setCabinType(event.target.value as string);
-    console.log(cabinType);
   };
 
-  const getFlights = (url: string) => axios.get(url);
-
-  const getAllFlights = useCallback(() => {
-    setIsLoading(true);
-    axios
-      .all([getFlights(API.cheap_flights), getFlights(API.business_flights)])
-      .then(
-        axios.spread(function(cheap: any, business: any) {
-          if (_isMounted.current) {
-            const cheapFlightsData = cheap.data;
-            const businessFlightsData = business.data;
-
-            setCheapFlights(cheapFlightsData.data);
-            setBizFlights(businessFlightsData.data);
-            setIsLoading(false);
-          }
-        })
-      )
-      .catch(errors => {
-        console.log(errors);
-      });
-  }, []);
-
   useEffect(() => {
-    getAllFlights();
+    dispatch(getCheapFlightsData());
+    dispatch(getBusinessFlightsData());
     return () => {
       _isMounted.current = false;
     };
-  }, [getAllFlights]);
+  }, [dispatch]);
 
-  /** data */
-  const arrivalLocation = bizFlights.map((val: any) => val.arrival);
-  const getRoute = cheapFlights.map((val: any) => val.route);
 
-  const splitRetrunInfo = getRoute.map((arr: Array<any>) =>
-    arr.toString().split('-')
-  );
-  const getReturnFLights = splitRetrunInfo.filter((val: any) =>
-    arrivalLocation.includes(val[1])
-  );
+  const getFlightsInformation = (
+    cheapFlightData: any,
+    businessFlightData: any
+  ) => {
+    const getRoute = cheapFlightData.map((val: any) => val.route);
+    const arrivalLocation = businessFlightData.map((val: any) => val.arrival);
 
-  /** filter by */
-  const getValForFilter = getReturnFLights.map((val: any) => val[1]);
-  const uniqueValue = (value: any, index: number, self: any) =>
-    self.indexOf(value) === index;
-  const filterValue = getValForFilter.filter(uniqueValue);
+    const splitRetrunInfo = getRoute.map((arr: Array<any>) =>
+      arr.toString().split('-')
+    );
 
-  /** table */
+    const getReturnFLights = splitRetrunInfo.filter((val: any) =>
+      arrivalLocation.includes(val[1])
+    );
+
+    return getReturnFLights;
+  };
+
   const dataListPerPage: number = 5;
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(dataListPerPage);
-  // const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const emptyRows =
-    rowsPerPage -
-    Math.min(
-      rowsPerPage,
-      getReturnFLights && getReturnFLights.length - page * rowsPerPage
-    );
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -210,49 +188,74 @@ const Home = (props: ITableProps) => {
     setPage(0);
   };
 
+
+  function renderFilterValue() {
+    const uniqueValue = (value: any, index: number, self: any) =>
+      self.indexOf(value) === index;
+    return (
+      <Select value={cabinType} onChange={handleChange}>
+        <MenuItem value="all">All</MenuItem>
+        {cheapFlight.data &&
+          businessFlight.data &&
+          getFlightsInformation(cheapFlight.data, businessFlight.data)
+            .map((val: any) => val[1])
+            .filter(uniqueValue)
+            .map((value: any, index: number) => (
+              <MenuItem key={index} value={value}>
+                {value}
+              </MenuItem>
+            ))}
+      </Select>
+    );
+  }
+
+  function getLength() {
+    if(cheapFlight.data && businessFlight.data) {
+      const result = getFlightsInformation(cheapFlight.data, businessFlight.data);
+      return result.length;
+    }
+    return null || 0;
+  }
+
+  function renderComponent() {
+    return (
+      <TableBody>
+        {cheapFlight.data &&
+          businessFlight.data &&
+          (rowsPerPage > 0
+            ? getFlightsInformation(
+                cheapFlight.data,
+                businessFlight.data
+              ).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            : getFlightsInformation(cheapFlight.data, businessFlight.data)
+          )
+            .filter((info: any) =>
+              cabinType !== 'all' ? info[1].includes(cabinType) : true
+            )
+            .map((flight: any, index: number) => (
+              <TableRow key={index}>
+                <TableCell component="th" scope="row">
+                  {`${flight[0]}`}
+                </TableCell>
+                <TableCell>{`${flight[1]}`}</TableCell>
+              </TableRow>
+            ))}
+      </TableBody>
+    );
+  }
+
   return (
     <Container>
       <Header title="Return Flights Info" className={classes.heading} />
       <FormControl className={classes.formControl}>
         <InputLabel>Filter by</InputLabel>
-        <Select value={cabinType} onChange={handleChange}>
-          <MenuItem value="all">All</MenuItem>
-          {filterValue.map((value: any, index: number) => (
-            <MenuItem key={index} value={value}>
-              {value}
-            </MenuItem>
-          ))}
-        </Select>
+        {renderFilterValue()}
       </FormControl>
-      {!isLoading ? (
+      {!(isCheapflightsLoading && isBusinessflightsLoading) ? (
         <TableContainer component={Paper} className={classes.tableContainer}>
           <Table className={classes.table}>
             <TableHeader />
-            <TableBody>
-              {!isLoading &&
-                (rowsPerPage > 0
-                  ? getReturnFLights.slice(
-                      page * rowsPerPage,
-                      page * rowsPerPage + rowsPerPage
-                    )
-                  : getReturnFLights
-                )
-                  .filter(info =>
-                    cabinType !== 'all' ? info[1].includes(cabinType) : true
-                  )
-                  .map((flight: any, index: number) => (
-                    <FlightList
-                      key={index}
-                      departure={`${flight[0]}`}
-                      arrival={`${flight[1]}`}
-                    />
-                  ))}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
-            </TableBody>
+            {renderComponent()}
             <TableFooter>
               <TableRow>
                 <TablePagination
@@ -260,7 +263,7 @@ const Home = (props: ITableProps) => {
                     dataListPerPage,
                     { label: 'All', value: -1 },
                   ]}
-                  count={getReturnFLights.length}
+                  count={getLength()}
                   rowsPerPage={rowsPerPage}
                   page={page}
                   SelectProps={{

@@ -2,17 +2,25 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { combineReducers, createStore } from 'redux';
-import { reducer as formReducer } from 'redux-form';
+import { combineReducers, createStore, applyMiddleware } from 'redux';
+// import { reducer as formReducer } from 'redux-form';
 import App from './components/App/App';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
+import { cheapFlightInfoReducer, businessFlightInfoReducer} from './redux/reducers';
+// import { fetchAllData } from '../src/redux/actions'
+
+import thunk from "redux-thunk";
+
+import logger from 'redux-logger'
 
 const rootReducer = combineReducers({
-  form: formReducer,
+  // form: formReducer,
+  cheapFlightsInfo: cheapFlightInfoReducer,
+  businessFlightsInfo : businessFlightInfoReducer
 });
 
-const store = createStore(rootReducer);
+const store = createStore(rootReducer, applyMiddleware(thunk,logger));
 
 ReactDOM.render(
   <Router>
